@@ -1,0 +1,50 @@
+{
+    "id": "01KEARJD583WPK6TSWQCXV5TGV",
+    "version": "1.5.0",
+    "attributes": {
+        "userId": "01KE7X70TD3G5WNRPPE7S0NDB7",
+        "primaryClientId": "01KE7WXPANFVDFRHVW20G5M26H",
+        "source": "imessage",
+        "timeStamp": 1767740339,
+        "attachment": "attachment",
+        "service": "imessage",
+        "encryption": {
+            "encryptedSymmetricKey": "jgDNUCTVcRK0YI7SaE26DeVqZn1nHKSI608v+2cuJZvE2ZlwNMBdSCKwUmlSH9NpgaXL4edpLc4KXLtZWOhAe64+CwiuSjEPW3C4dcDwZnBaAPMw0ivJGHlbo7M2BiQXRog93u+bcMU+mH3ZbYuPG9/iON7eVTCAhxmbkNFtUjPOJqA/r9dOHDdriEeNQtlW7NhR+hxRyp/plMAKVG8fkp0lSDPKuTRf7IJ2hd0+mnzlFyqHIBlAnEdOj1VlZudEnDrI7froIilPjR72w8NxVonvZDDw8DvDYBNlAyUbIl25Kg0hEmutXZ1IvK/dmhD80sVxSOQ8xzHGXWdGnokCUg==",
+            "publicKey": "-----BEGIN PUBLIC KEY----- MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqwWfpmpdCEds02ABAtij h4UpBKDApRVohaHB7Meus9H7jzt3vwIdBi8fH5Vievj5YO5JemCmxTXT5BCOkzT5 6WqiWEleNuFvwPUEfYzrcZ4OiRLxsICB+ZWZb7y23tz33IfPaHoLpgunSP2I3/lH oyOM3vA7/6W8lCkwEt3cCTa5jGl0Wt35MH3cBZl82A2Dt3+W6ARUJMcsNBIYgvqv qa2gsnfU6CTxJlIuEWXzSdr4IBWLxd6K60/jc9whxKufZ9j1YQ3DIWfS0nZrTtT6 rorHDHzdVlP538mXwLVFfpFlrttphCdbr9qfflNqPzy5Q4ITk916Z8Fd84WZZViE vwIDAQAB -----END PUBLIC KEY-----"
+        },
+        "uniqueChatId": "36e1c21dfc1abd55eba3ef8c95c976be5034b848f08fc381ea270851f5a5d193"
+    },
+    "payload": {
+        "fromMe": false,
+        "message": {
+            "message": "dLzI3fpmPORlkppgvrdyp5ZI3oLR5VxynTF/l+oiZ5iDOBuknZVDadpZCEaOxCyl",
+            "messageEncoding": "utf-8",
+            "segmentEncryption": {
+                "authTag": "oueEQ3xV+LcnZAWyF77vAA==",
+                "initializationVector": "6UbCzfOmbIP5zaYg"
+            }
+        },
+        "messageTime": 1767740339,
+        "receivers": [
+            {
+                "receiverAccount": "E:darrin.dykstra@snippetsentry.com",
+                "receiverEmail": "darrin.dykstra@snippetsentry.com",
+                "receiverPhoneNumber": ""
+            }
+        ],
+        "senderAccount": "darrindykstra@gmail.com",
+        "senderEmail": "",
+        "senderPhoneNumber": "",
+        "sourceAccount": "+16506425877",
+        "sourceMessageId": "988377F5-B6FD-4A51-99A5-1A2A4459F9B0",
+        "chatId": "darrindykstra@gmail.com",
+        "userEmail": "darrin+apple-live@snippetsentry.com",
+        "userFirstName": "Darrin",
+        "userLastName": "Apple-Live-Agent",
+        "userPhoneNumber": "+16506425877",
+        "chatRoomName": "",
+        "editedMessageId": "",
+        "replyToMessageId": "",
+        "deletedMessageId": ""
+    }
+}

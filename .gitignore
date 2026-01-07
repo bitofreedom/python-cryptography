@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+pycache/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.env
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# PyInstaller
+*.spec
+
+# Mac OS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Project Data (Ignore all outputs and keys)
+data/outputs/*
+keys/*
+tmp/
+
+# Keep the folder structures but ignore content (optional, using .gitkeep)
+!keys/.gitkeep
+!data/outputs/.gitkeep

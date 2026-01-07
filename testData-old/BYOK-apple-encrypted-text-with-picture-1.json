@@ -1,0 +1,50 @@
+{
+    "id": "01KE7ZT2WKGSESWBQ2BVE1BD88",
+    "version": "1.5.0",
+    "attributes": {
+        "userId": "01KE7X70TD3G5WNRPPE7S0NDB7",
+        "primaryClientId": "01KE7WXPANFVDFRHVW20G5M26H",
+        "source": "imessage",
+        "timeStamp": 1767647240,
+        "attachment": "attachment",
+        "service": "sms",
+        "encryption": {
+            "encryptedSymmetricKey": "TDBVvpFfCM6g8/vdMlo0YwidqUEsUehHHsm7DxuE1IGV/rtp+grnxwi/p9x1uQT7uxCduWL3YBSXq/phg50IOBqAvyc56CsynLskJsxD8o/19eILVrLmc+xUiYlHUBFKC0LSpu7Ilhf4N18Rt7yDVACmMREgHlXpCWqVRlExnLLdVNdIwLPvZR9wZC77ijGMnsc3ZFZmYYe6NgGdlnD16FFACX7PDQrD0QSaEX9I9HvILzuQruiUobtfffr/VDDoFGDDWzHm1+SoiSZ4/5Jgk5Lxeuy0TsMH2A5+2OjGBE3GsRmEAiiZf19LVKIYBWcHoCfAvncDDskI0Q6AD7jEbA==",
+            "publicKey": "-----BEGIN PUBLIC KEY----- MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqwWfpmpdCEds02ABAtij h4UpBKDApRVohaHB7Meus9H7jzt3vwIdBi8fH5Vievj5YO5JemCmxTXT5BCOkzT5 6WqiWEleNuFvwPUEfYzrcZ4OiRLxsICB+ZWZb7y23tz33IfPaHoLpgunSP2I3/lH oyOM3vA7/6W8lCkwEt3cCTa5jGl0Wt35MH3cBZl82A2Dt3+W6ARUJMcsNBIYgvqv qa2gsnfU6CTxJlIuEWXzSdr4IBWLxd6K60/jc9whxKufZ9j1YQ3DIWfS0nZrTtT6 rorHDHzdVlP538mXwLVFfpFlrttphCdbr9qfflNqPzy5Q4ITk916Z8Fd84WZZViE vwIDAQAB -----END PUBLIC KEY-----"
+        },
+        "uniqueChatId": "a2aa27a94279a8237ae10f6ba606b8f8cb212ece90a635483c7368689978c650"
+    },
+    "payload": {
+        "fromMe": true,
+        "message": {
+            "message": "8HBspir8gE5EPV4lnQ==",
+            "messageEncoding": "utf-8",
+            "segmentEncryption": {
+                "authTag": "ToPLG31TCTA56sAurtwVFw==",
+                "initializationVector": "7V2ugLbMmiRnPvEI"
+            }
+        },
+        "messageTime": 1767647240,
+        "receivers": [
+            {
+                "receiverAccount": "+16506425655",
+                "receiverEmail": "",
+                "receiverPhoneNumber": "+16506425655"
+            }
+        ],
+        "senderAccount": "+16506425877",
+        "senderEmail": "",
+        "senderPhoneNumber": "",
+        "sourceAccount": "+16506425877",
+        "sourceMessageId": "F04A3117-04FB-4380-A7B2-7835C9B8A1CE",
+        "chatId": "+16506425655",
+        "userEmail": "darrin+apple-live@snippetsentry.com",
+        "userFirstName": "Darrin",
+        "userLastName": "Apple-Live-Agent",
+        "userPhoneNumber": "+16506425877",
+        "chatRoomName": "",
+        "editedMessageId": "",
+        "replyToMessageId": "",
+        "deletedMessageId": ""
+    }
+}
