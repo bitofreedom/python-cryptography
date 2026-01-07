@@ -22,7 +22,7 @@ source venv/bin/activate
 
 Install Dependencies:
 
-pip install cryptography
+pip install -r requirements.txt
 
 
 Usage
@@ -31,11 +31,19 @@ Usage
 
 Use decrypt_msg_and_attachment.py for payloads containing encrypted encryptedSymmetricKey and segmentEncryption fields.
 
-# Run on a single file
-python src/decrypt_msg_and_attachment.py data/inputs/encrypted_file.json keys/private_key.pem
+Usage: python src/decrypt_msg_and_attachment.py <private_key.pem> [input_path]
 
-# Run on a directory of files
-python src/decrypt_msg_and_attachment.py data/inputs/ keys/private_key.pem
+private_key.pem: (Required) Path to your private key file.
+
+input_path: (Optional) Path to a JSON file or a folder of JSON files. Defaults to data/inputs.
+
+Examples:
+
+# Process all files in data/inputs using a key in the keys folder
+python src/decrypt_msg_and_attachment.py keys/private-client.pem
+
+# Process a specific file
+python src/decrypt_msg_and_attachment.py keys/private-client.pem data/inputs/specific_test.json
 
 
 Output: Decrypted content is saved to data/outputs/decrypted_message/ and data/outputs/decrypted_attachment/.
@@ -44,11 +52,17 @@ Output: Decrypted content is saved to data/outputs/decrypted_message/ and data/o
 
 Use extract_msg_and_attachment.py for payloads that are plain Base64 encoded (no encryption).
 
-# Run on a single file
-python src/extract_msg_and_attachment.py data/inputs/unencrypted_file.json
+Usage: python src/extract_msg_and_attachment.py [input_path]
 
-# Run on a directory of files
-python src/extract_msg_and_attachment.py data/inputs/
+input_path: (Optional) Path to a JSON file or a folder of JSON files. Defaults to data/inputs.
+
+Examples:
+
+# Process all files in data/inputs
+python src/extract_msg_and_attachment.py
+
+# Process a specific folder
+python src/extract_msg_and_attachment.py data/other_test_data/
 
 
 Output: Extracted content is saved to data/outputs/extracted_message/ and data/outputs/extracted_attachment/.

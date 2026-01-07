@@ -18,7 +18,7 @@ except ImportError:
     sys.exit(1)
 
 # --- CONFIGURATION ---
-# Output paths relative to the current working directory
+# Output paths relative to the project root (assuming script runs from root)
 BASE_OUTPUT_DIR = os.path.join("data", "outputs")
 OUTPUT_DIR_MSG = os.path.join(BASE_OUTPUT_DIR, "decrypted_message")
 OUTPUT_DIR_ATT = os.path.join(BASE_OUTPUT_DIR, "decrypted_attachment")
@@ -132,7 +132,23 @@ def process_payload(json_file_path, private_key):
     # 2. Decrypt Symmetric Key
     symmetric_key = None
     try:
-        enc_sym_key_b64 = data["attributes"]["encryption"]["encryptedSymmetricKey"]
+        # --- ROBUST CHECKING START ---
+        attributes = data.get("attributes")
+        if not attributes:
+            print("    [-] Skipping: Schema mismatch (Missing 'attributes' field).")
+            return
+        
+        encryption_info = attributes.get("encryption")
+        if not encryption_info:
+            print("    [-] Skipping: File appears unencrypted (Missing 'encryption' field).")
+            return
+            
+        enc_sym_key_b64 = encryption_info.get("encryptedSymmetricKey")
+        if not enc_sym_key_b64:
+             print("    [-] Skipping: No symmetric key found.")
+             return
+        # --- ROBUST CHECKING END ---
+
         enc_sym_key_bytes = base64.b64decode(enc_sym_key_b64)
 
         symmetric_key = private_key.decrypt(
@@ -232,20 +248,41 @@ def process_payload(json_file_path, private_key):
                 print(f"        [-] Error processing attachment {i+1}: {e}")
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python src/decrypt_msg_and_attachment.py <input_path> <private_key.pem>")
-        print("   <input_path> can be a single .json file OR a directory containing .json files.")
+    default_input_dir = os.path.join("data", "inputs")
+    input_path = None
+    key_path = None
+
+    # Parse arguments
+    args = sys.argv[1:]
+    
+    # Heuristic: Find argument ending in .pem -> Key Path
+    for arg in args:
+        if arg.endswith('.pem'):
+            key_path = arg
+            break
+            
+    # Heuristic: Find argument NOT ending in .pem -> Input Path
+    for arg in args:
+        if arg != key_path:
+            input_path = arg
+            break
+            
+    # Defaults
+    if not input_path:
+        input_path = default_input_dir
+
+    if not key_path:
+        print("\nUsage: python src/decrypt_msg_and_attachment.py <private_key.pem> [input_path]")
+        print(f"   [input_path] defaults to '{default_input_dir}' if omitted.")
+        print("   <private_key.pem> is required.")
         sys.exit(1)
 
-    input_path = sys.argv[1]
-    key_path = sys.argv[2]
-
     if not os.path.exists(input_path):
-        print(f"Error: Path not found: {input_path}")
+        print(f"Error: Input path not found: {input_path}")
         sys.exit(1)
         
     if not os.path.exists(key_path):
-        print(f"Error: File not found: {key_path}")
+        print(f"Error: Key file not found: {key_path}")
         sys.exit(1)
 
     setup_directories()
@@ -262,7 +299,7 @@ def main():
         files_to_process.sort() 
     
     if not files_to_process:
-        print("No JSON files found to process.")
+        print(f"No JSON files found in {input_path}")
         sys.exit(0)
 
     print(f"[*] Found {len(files_to_process)} file(s) to process.")

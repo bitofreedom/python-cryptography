@@ -6,7 +6,6 @@ import os
 import mimetypes
 
 # --- CONFIGURATION ---
-# Output paths relative to the current working directory
 BASE_OUTPUT_DIR = os.path.join("data", "outputs")
 OUTPUT_DIR_MSG = os.path.join(BASE_OUTPUT_DIR, "extracted_message")
 OUTPUT_DIR_ATT = os.path.join(BASE_OUTPUT_DIR, "extracted_attachment")
@@ -63,8 +62,6 @@ def process_double_base64(data):
     Checks if the binary data is actually a Base64 string masquerading as binary 
     and decodes it again if necessary.
     """
-    # Common headers in Base64:
-    # M4A (AAAA), CAF (Y2Fm), AMR (IyFB), JPG (/9j/), PNG (iVBOR), PDF (JVBER)
     prefixes = [b'AAAAHGZ0', b'Y2Fm', b'IyFBT', b'/9j/', b'iVBOR', b'JVBER']
     
     if any(data.startswith(p) for p in prefixes):
@@ -106,7 +103,6 @@ def process_payload(json_file_path):
 
     if target_obj:
         try:
-            # Fallback check if keys are swapped
             if content_key not in target_obj:
                 if "text" in target_obj: content_key = "text"
                 elif "message" in target_obj: content_key = "message"
@@ -119,8 +115,6 @@ def process_payload(json_file_path):
                         f.write(str(message_content))
                     
                     print(f"    [+] Extracted text: {output_filename}")
-                else:
-                    print("    [-] Message content was empty.")
         except Exception as e:
             print(f"    [-] Failed to extract text content: {e}")
 
@@ -138,13 +132,8 @@ def process_payload(json_file_path):
                     print(f"        [-] Attachment {i+1} has no data field.")
                     continue
 
-                # 1. Primary Decode
                 file_bytes = base64.b64decode(raw_b64)
-                
-                # 2. Check for Double-Encoding
                 file_bytes = process_double_base64(file_bytes)
-                
-                # 3. Detect Extension
                 real_ext = detect_extension(file_bytes)
                 
                 raw_name = att.get("fileName", "").strip()
@@ -177,15 +166,15 @@ def process_payload(json_file_path):
                 print(f"        [-] Error processing attachment {i+1}: {e}")
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python src/extract_msg_and_attachment.py <input_path>")
-        print("   <input_path> can be a single .json file OR a directory containing .json files.")
-        sys.exit(1)
+    default_input_dir = os.path.join("data", "inputs")
+    input_path = default_input_dir
 
-    input_path = sys.argv[1]
+    if len(sys.argv) > 1:
+        input_path = sys.argv[1]
 
     if not os.path.exists(input_path):
-        print(f"Error: Path not found: {input_path}")
+        print(f"Error: Input path not found: {input_path}")
+        print(f"Please ensure '{input_path}' exists or provide a path as an argument.")
         sys.exit(1)
 
     setup_directories()
@@ -200,7 +189,7 @@ def main():
         files_to_process.sort() 
     
     if not files_to_process:
-        print("No JSON files found to process.")
+        print(f"No JSON files found in {input_path}")
         sys.exit(0)
 
     print(f"[*] Found {len(files_to_process)} file(s) to process.")
