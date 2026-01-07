@@ -35,7 +35,7 @@ def detect_extension(data):
     Inspects the first few bytes (Magic Bytes) of the decrypted data
     to determine the actual file type.
     """
-    if len(data) < 12:
+    if len(data) < 4:
         return None
 
     # --- Images ---
@@ -44,18 +44,18 @@ def detect_extension(data):
     if data.startswith(b'GIF87a') or data.startswith(b'GIF89a'): return '.gif'
     if data.startswith(b'BM'): return '.bmp'
     if data.startswith(b'II*\x00') or data.startswith(b'MM\x00*'): return '.tiff'
-    if data.startswith(b'RIFF') and data[8:12] == b'WEBP': return '.webp'
+    if data.startswith(b'RIFF') and len(data) > 12 and data[8:12] == b'WEBP': return '.webp'
         
     # --- Audio ---
     if data.startswith(b'caff'): return '.caf'
     if data.startswith(b'#!AMR'): return '.amr'
     if data.startswith(b'ID3') or data.startswith(b'\xff\xfb') or data.startswith(b'\xff\xf3'): return '.mp3'
-    if data.startswith(b'RIFF') and data[8:12] == b'WAVE': return '.wav'
+    if data.startswith(b'RIFF') and len(data) > 12 and data[8:12] == b'WAVE': return '.wav'
     if data.startswith(b'OggS'): return '.ogg'
     if data.startswith(b'fLaC'): return '.flac'
 
     # --- Video / ISO Base Media ---
-    if data[4:8] == b'ftyp':
+    if len(data) > 12 and data[4:8] == b'ftyp':
         major_brand = data[8:12]
         if major_brand == b'qt  ': return '.mov'
         if major_brand == b'M4A ': return '.m4a'
@@ -129,47 +129,39 @@ def process_payload(json_file_path, private_key):
         print(f"    [-] Error loading JSON: {e}")
         return
 
-    # 2. Decrypt Symmetric Key
+    # 2. Attempt to Recover Symmetric Key (if encrypted)
     symmetric_key = None
-    try:
-        # --- ROBUST CHECKING START ---
-        attributes = data.get("attributes")
-        if not attributes:
-            print("    [-] Skipping: Schema mismatch (Missing 'attributes' field).")
-            return
-        
-        encryption_info = attributes.get("encryption")
-        if not encryption_info:
-            print("    [-] Skipping: File appears unencrypted (Missing 'encryption' field).")
-            return
-            
-        enc_sym_key_b64 = encryption_info.get("encryptedSymmetricKey")
-        if not enc_sym_key_b64:
-             print("    [-] Skipping: No symmetric key found.")
-             return
-        # --- ROBUST CHECKING END ---
+    attributes = data.get("attributes", {})
+    encryption_info = attributes.get("encryption")
+    
+    if encryption_info and "encryptedSymmetricKey" in encryption_info:
+        try:
+            enc_sym_key_b64 = encryption_info["encryptedSymmetricKey"]
+            enc_sym_key_bytes = base64.b64decode(enc_sym_key_b64)
 
-        enc_sym_key_bytes = base64.b64decode(enc_sym_key_b64)
-
-        symmetric_key = private_key.decrypt(
-            enc_sym_key_bytes,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
+            symmetric_key = private_key.decrypt(
+                enc_sym_key_bytes,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None
+                )
             )
-        )
-    except Exception as e:
-        print(f"    [-] Failed to decrypt symmetric key: {e}")
-        return
+            print("    [+] Symmetric key recovered.")
+        except Exception as e:
+            print(f"    [-] Failed to decrypt symmetric key: {e}")
+            # We don't return here because parts of the payload might be unencrypted
+    else:
+        print("    [INFO] No encryption attributes found. Treating payload as unencrypted.")
 
     payload = data.get("payload", {})
 
-    # 3. Decrypt Message / Text Content
+    # 3. Process Message / Text Content
     target_obj = None
     content_key = None
     output_filename = f"{base_filename}_message.txt"
 
+    # Locate the message object
     if "message" in payload and isinstance(payload["message"], dict):
         target_obj = payload["message"]
         content_key = "message"
@@ -178,72 +170,117 @@ def process_payload(json_file_path, private_key):
         content_key = "text"
         output_filename = f"{base_filename}_text.txt"
 
-    if target_obj:
-        try:
-            if content_key not in target_obj:
-                if "text" in target_obj: content_key = "text"
-                elif "message" in target_obj: content_key = "message"
+    if not target_obj:
+        print("    [INFO] Field 'payload.message.message' (or 'text') not found.")
+    else:
+        # Resolve the specific content key inside the object
+        if content_key not in target_obj:
+            if "text" in target_obj: content_key = "text"
+            elif "message" in target_obj: content_key = "message"
+        
+        # Extract Content
+        if content_key in target_obj:
+            raw_content = target_obj[content_key]
             
-            if content_key in target_obj and "segmentEncryption" in target_obj:
-                c_text = target_obj[content_key]
-                iv = target_obj["segmentEncryption"]["initializationVector"]
-                tag = target_obj["segmentEncryption"]["authTag"]
-                
-                decrypted_bytes = decrypt_aes_gcm(symmetric_key, c_text, iv, tag)
-                decrypted_text = decrypted_bytes.decode('utf-8')
-                
-                out_path = os.path.join(OUTPUT_DIR_MSG, output_filename)
-                with open(out_path, "w", encoding="utf-8") as f:
-                    f.write(decrypted_text)
-                
-                print(f"    [+] Decrypted text: {output_filename}")
-        except Exception as e:
-            print(f"    [-] Failed to decrypt text content: {e}")
+            if not raw_content:
+                print(f"    [INFO] Field 'payload.message.{content_key}' found but is empty/null.")
+            else:
+                try:
+                    # Check for Encryption
+                    if "segmentEncryption" in target_obj:
+                        if not symmetric_key:
+                            print("    [-] Skipping message: Encrypted content found but no symmetric key available.")
+                        else:
+                            iv = target_obj["segmentEncryption"]["initializationVector"]
+                            tag = target_obj["segmentEncryption"]["authTag"]
+                            decrypted_bytes = decrypt_aes_gcm(symmetric_key, raw_content, iv, tag)
+                            final_text = decrypted_bytes.decode('utf-8')
+                            
+                            out_path = os.path.join(OUTPUT_DIR_MSG, output_filename)
+                            with open(out_path, "w", encoding="utf-8") as f:
+                                f.write(final_text)
+                            print(f"    [+] Decrypted text: {output_filename}")
+                    else:
+                        # Unencrypted Text
+                        out_path = os.path.join(OUTPUT_DIR_MSG, output_filename)
+                        with open(out_path, "w", encoding="utf-8") as f:
+                            f.write(raw_content)
+                        print(f"    [+] Saved plain text: {output_filename}")
 
-    # 4. Decrypt Attachments
+                except Exception as e:
+                    print(f"    [-] Failed to process text content: {e}")
+        else:
+            print("    [INFO] Field 'payload.message.message' not found in message object.")
+
+
+    # 4. Process Attachments
     attachments = []
     if target_obj:
         attachments = target_obj.get("attachments", [])
     
-    if attachments:
+    if not attachments:
+        print("    [INFO] Field 'payload.message.attachments' not found or empty.")
+    else:
         print(f"    [+] Found {len(attachments)} attachment(s).")
         for i, att in enumerate(attachments):
             try:
-                c_text = att["data"]
-                iv = att["segmentEncryption"]["initializationVector"]
-                tag = att["segmentEncryption"]["authTag"]
+                raw_data = att.get("data")
                 
-                decrypted_bytes = decrypt_aes_gcm(symmetric_key, c_text, iv, tag)
-                decrypted_bytes = process_double_base64(decrypted_bytes)
-                
-                real_ext = detect_extension(decrypted_bytes)
-                
-                raw_name = att.get("fileName", "").strip()
-                base_att_name = ""
-                original_ext = ""
-                if raw_name:
-                    base_att_name, original_ext = os.path.splitext(raw_name)
+                if not raw_data:
+                    print(f"        [INFO] Attachment {i+1} found but 'data' field is empty.")
+                    continue
 
-                if not real_ext:
-                    if original_ext:
-                        real_ext = original_ext
-                    else:
-                        mime_type = att.get("mimeType", "application/octet-stream")
-                        if mime_type != "application/octet-stream":
-                            real_ext = mimetypes.guess_extension(mime_type)
-                
-                if not real_ext: real_ext = '.dat'
-                
-                if base_att_name:
-                    fname = f"{base_filename}_{base_att_name}{real_ext}"
+                processed_bytes = None
+
+                # Check for Encryption
+                if "segmentEncryption" in att:
+                    if not symmetric_key:
+                        print(f"        [-] Skipping attachment {i+1}: Encrypted content found but no symmetric key available.")
+                        continue
+                    
+                    iv = att["segmentEncryption"]["initializationVector"]
+                    tag = att["segmentEncryption"]["authTag"]
+                    processed_bytes = decrypt_aes_gcm(symmetric_key, raw_data, iv, tag)
                 else:
-                    fname = f"{base_filename}_attachment_{i+1}{real_ext}"
-                
-                out_path = os.path.join(OUTPUT_DIR_ATT, fname)
-                with open(out_path, "wb") as f:
-                    f.write(decrypted_bytes)
-                print(f"        [+] Saved: {fname}")
-                
+                    # Unencrypted Attachment (Assume Base64)
+                    try:
+                        processed_bytes = base64.b64decode(raw_data)
+                    except Exception as e:
+                        print(f"        [-] Failed to decode base64 attachment data: {e}")
+                        continue
+
+                # Handle Double-Base64 & Extensions
+                if processed_bytes:
+                    processed_bytes = process_double_base64(processed_bytes)
+                    
+                    real_ext = detect_extension(processed_bytes)
+                    
+                    raw_name = att.get("fileName", "").strip()
+                    base_att_name = ""
+                    original_ext = ""
+                    if raw_name:
+                        base_att_name, original_ext = os.path.splitext(raw_name)
+
+                    if not real_ext:
+                        if original_ext:
+                            real_ext = original_ext
+                        else:
+                            mime_type = att.get("mimeType", "application/octet-stream")
+                            if mime_type and mime_type != "application/octet-stream":
+                                real_ext = mimetypes.guess_extension(mime_type)
+                    
+                    if not real_ext: real_ext = '.dat'
+                    
+                    if base_att_name:
+                        fname = f"{base_filename}_{base_att_name}{real_ext}"
+                    else:
+                        fname = f"{base_filename}_attachment_{i+1}{real_ext}"
+                    
+                    out_path = os.path.join(OUTPUT_DIR_ATT, fname)
+                    with open(out_path, "wb") as f:
+                        f.write(processed_bytes)
+                    print(f"        [+] Saved: {fname}")
+
             except Exception as e:
                 print(f"        [-] Error processing attachment {i+1}: {e}")
 
@@ -272,7 +309,7 @@ def main():
         input_path = default_input_dir
 
     if not key_path:
-        print("\nUsage: python src/decrypt_msg_and_attachment.py <private_key.pem> [input_path]")
+        print("\nUsage: python decrypt_combined.py <private_key.pem> [input_path]")
         print(f"   [input_path] defaults to '{default_input_dir}' if omitted.")
         print("   <private_key.pem> is required.")
         sys.exit(1)
